@@ -1,0 +1,46 @@
+---
+title: "Assignment3B-KCH-Approach"
+author: "Kailot C. Harris"
+date: "2026/09/16"
+format: html
+theme: cosmo
+editor: visual
+---
+
+# Introduction and Overview
+
+Window functions are a useful method to generate a new column of data calculated from previous columns while maintaining the original columns in tact. A common example is calculating a moving average column from data in preceding rows. Functions like `sum()`, `summarize()`, or `count()` are not window functions because they flatten the data into singular outputs, rather than maintaining the table rows.
+
+In this assignment, window functions will be utilized to calculate rolling averages (year-to-date and six-day moving averages) of financial data. The data will be sourced from an open data provider of stocks traded on the New York Stock Exchange as of Friday, September 11, 2026. Since moving-averages are useful for stock price analysis, there are several types of moving average calculations used in this context. For instance, a 5-day simple-moving-average (SMA5) is calculated as the standard mean of the last five days' observations (e.g. closing prices). Alternatively, the 5-day exponential-moving-average (EMA5) is a weighted moving average, which more heavily weighs recent data over temporally older data. This older data has an exponential decay pattern to its weighing, so the EMA is utilized as a more reactive alternative to SMA calculations. By contrast, the SMA calculations are less responsive to intra-day fluctuations and can provide smoother trends.
+
+Anticipated challenges in this assignment include maintaining a reproducible pipeline from ingestion to analysis, identifying a reliable and free data source, and appropriately applying window functions in R.
+
+# Code Base
+
+## Data Ingestion from free, reliable source (Alpha Vantage API)
+
+Alpha Vantage was selected as the data provider for this assignment, as it has a generous free tier and the documentation is available (<https://www.alphavantage.co/documentation/>). An API key was provisioned and stored in .Renviron for secure credential storage. The "TIME_SERIES_DAILY" API was chosen for this endeavor as it provides date, daily open, daily high, daily low, daily close, and daily volume values (OHLCV). Since this API returns data for one ticker symbol per request, only 5 tickers will be investigated for this report. This will allow for retries on these five tickers without tripping the daily query limit at the API. A small ticker universe was selected for this reasons, and it includes: \$DELL, \$AXTI, \$BE, \$COHR, and \$NVDA. Accessing the API can be accomplished through the `alphavantager` package, available at <https://cran.r-project.org/web/packages/alphavantager/refman/alphavantager.html>. This API interface has a 1 request per second limit, so it is important to manually run each line below after a 1 second pause.
+
+```{r API-connect}
+
+library(alphavantager)
+
+ticker_univ = c("DELL", "AXTI", "BE", "COHR", "NVDA")
+av_api_key(Sys.getenv("DATA_607_ALPHA_KEY"))
+
+df_DELL <- av_get(ticker_univ[1], av_fun = "TIME_SERIES_DAILY")
+# PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
+df_AXTI <- av_get(ticker_univ[2], av_fun = "TIME_SERIES_DAILY")
+# PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
+df_BE <- av_get(ticker_univ[3], av_fun = "TIME_SERIES_DAILY")
+# PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
+df_COHR <- av_get(ticker_univ[4], av_fun = "TIME_SERIES_DAILY")
+# PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
+df_NDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
+```
+
+## Data Tidying
+
+```{r}
+
+```
