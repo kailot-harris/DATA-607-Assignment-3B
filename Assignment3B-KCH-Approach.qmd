@@ -7,7 +7,7 @@ theme: cosmo
 editor: visual
 ---
 
-## Introduction and Overview
+# Introduction and Overview
 
 Window functions are a useful method to generate a new column of data calculated from previous columns while maintaining the original columns in tact. A common example is calculating a moving average column from data in preceding rows. Functions like `sum()`, `summarize()`, or `count()` are not window functions because they flatten the data into singular outputs, rather than maintaining the table rows.
 
