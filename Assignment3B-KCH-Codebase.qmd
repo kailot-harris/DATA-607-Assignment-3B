@@ -36,11 +36,93 @@ df_BE <- av_get(ticker_univ[3], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
 df_COHR <- av_get(ticker_univ[4], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
-df_NDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
+df_NVDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
 ```
 
 ## Data Tidying
 
-```{r}
+```{r data-tidying}
 
+library(janitor)
+library(tidyverse)
+
+df_AXTI <- janitor::clean_names(df_AXTI)
+df_BE <- janitor::clean_names(df_BE)
+df_COHR <- janitor::clean_names(df_COHR)
+df_DELL <- janitor::clean_names(df_DELL)
+df_NVDA <- janitor::clean_names(df_NVDA)
+
+head(df_AXTI)
 ```
+
+Issue: data starts on April 24th, but a year-to-date rolling average is needed. Approach: Query API for specific date range: 2026-01-01 - 2026-04-23. API does not allow historic querying on free tier. Going to try Massive API to get missing dates. Massive didn't work (too many requests needed for API limit). Going to try quantmod next (<https://www.quantmod.com/documentation/>).
+
+```{r more-API-data}
+
+library(quantmod)
+
+start_date <- as.Date("2026-01-01")
+end_date <- as.Date("2026-09-13")
+
+getSymbols(ticker_univ, src = "yahoo", from = start_date, to = end_date)
+
+head(AXTI)
+```
+
+For each data frame, the names are cleaned (removing periods), the object is converted a tidyverse ready data frame, and only the adjusted close price column is maintained.
+
+```{r data-tidying-2}
+
+
+df_AXTI <- AXTI |>
+  janitor::clean_names() |>
+  as.data.frame() |>
+  select(axti_adjusted)
+
+df_BE <- BE |>
+  janitor::clean_names() |>
+  as.data.frame() |>
+  select(be_adjusted)
+
+df_COHR <- COHR |>
+  janitor::clean_names() |>
+  as.data.frame() |>
+  select(cohr_adjusted)
+
+df_DELL <- DELL |>
+  janitor::clean_names() |>
+  as.data.frame() |>
+  select(dell_adjusted)
+
+df_NVDA <- NVDA |>
+  janitor::clean_names() |>
+  as.data.frame() |>
+  select(nvda_adjusted)
+```
+
+```{r window-functions}
+library(slider)
+
+
+df_AXTI |> 
+  mutate(sma_6 = slide_dbl(axti_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         ytd_avg = cummean(axti_adjusted))
+
+df_BE |> 
+  mutate(sma_6 = slide_dbl(be_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         ytd_avg = cummean(be_adjusted))
+
+df_COHR |> 
+  mutate(sma_6 = slide_dbl(cohr_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         ytd_avg = cummean(cohr_adjusted))
+
+df_DELL |> 
+  mutate(sma_6 = slide_dbl(dell_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         ytd_avg = cummean(dell_adjusted))
+
+df_NVDA |>
+  mutate(sma_6 = slide_dbl(nvda_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         ytd_avg = cummean(nvda_adjusted))
+```
+
+## Visualization
