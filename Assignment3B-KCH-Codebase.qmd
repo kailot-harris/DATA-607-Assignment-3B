@@ -46,6 +46,10 @@ df_NVDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
 
 ```{r data-tidying}
 
+#| echo: true
+#| message: false
+#| warning: false
+
 library(janitor)
 library(tidyverse)
 
@@ -58,7 +62,13 @@ df_NVDA <- janitor::clean_names(df_NVDA)
 head(df_AXTI)
 ```
 
-Issue: data starts on April 24th, but a year-to-date rolling average is needed. Approach: Query API for specific date range: 2026-01-01 - 2026-04-23. API does not allow historic querying on free tier. Going to try Massive API to get missing dates. Massive didn't work (too many requests needed for API limit). Going to try quantmod next (<https://www.quantmod.com/documentation/>).
+## Retrying a New Data Source
+
+As observed above, the data from Alpha Vantage starts on `2026/04/24`, however data is needed from the beginning of the year, or `2026/01/01`. Queries sent to the AlphaVantage API for historical data between `2026/01/01` and `2026/04/23` were rejected due to free tier subscription level.
+
+In order to input a full data set spanning the entire 2026 calendar year, a new API was explored: Massive (formerly polygon.io). However, working with Massive API was also problematic, as the API request limit is 5 per minute and data from each individual date would need to be queried. This would result in too many requests for this API, and the pull queries would get rejected.
+
+As a fallback, the R package `quantmod` ([https://www.quantmod.com/documentation/](#0){.uri}) provides access to the yfinance repository and has easy built-in commands like `getSymbols()`. Additionally, no API key is needed for this data source, resulting in a more repeatable and reproducible approach.
 
 ```{r more-API-data}
 #| echo: true
@@ -75,10 +85,15 @@ getSymbols(ticker_univ, src = "yahoo", from = start_date, to = end_date)
 head(AXTI)
 ```
 
-For each data frame, the names are cleaned (removing periods), the object is converted to a tidyverse ready data frame, and only the adjusted close price column is maintained.
+## Data Tidying Quantmod Data
+
+The data source roadblock has been lifted, and now data cleaning can begin. For each data frame, the names are cleaned (removing periods), the object is converted to a tidyverse ready data frame, and only the adjusted close price column is maintained. Future users may choose to include other OHLCV data, in which case the `select()` functions can be disabled/removed.
 
 ```{r data-tidying-2}
 
+#| echo: true
+#| message: false
+#| warning: false
 
 df_AXTI <- AXTI |>
   janitor::clean_names() |>
@@ -106,7 +121,7 @@ df_NVDA <- NVDA |>
   select(nvda_adjusted)
 ```
 
-Slider functions from the `dplyr` package (loaded with `tinyverse`) are leveraged to calculate a 6-day simple moving average. Additionally, a year-to-date average is calculated for each row in each data frame.
+Slider functions from the `slider` package are leveraged to calculate a 6-day simple moving average. Additionally, a year-to-date average is calculated for each row in each data frame using the `cummean()` function from the `dplyr` package within the `tidyverse`. These values are computed for each ticker's adjusted price.
 
 ```{r window-functions}
 
@@ -139,28 +154,139 @@ df_NVDA <- df_NVDA |>
 
 ## Data Frame Joining
 
+To make visualizing multiple tickers in the same plot possible, the data frames are joined together. Since each frame has an unnamed column where the dates are stored, rather than a true typecasted date column, the `merge()` function from base R will be utilized, rather than a `left_join()` from the `tidyverse`, where a common column is needed.
+
 ```{r df-joining}
 #| echo: true
 #| message: false
 #| warning: false
-
-#first, null out the df_full data frame
-df_full <- df[0,]
 
 df_full <- merge(df_AXTI, df_BE, by = 0)
 df_full <- merge(df_full, df_COHR, by.x="Row.names", by.y=0)
 df_full <- merge(df_full, df_DELL, by.x="Row.names", by.y=0)
 df_full <- merge(df_full, df_NVDA, by.x="Row.names", by.y=0)
 
-head(df_full,10)
+tail(df_full,10)
 ```
 
-The date column is now a character vector, rather than a date vector.
+The date column is now a character vector, rather than a date vector. This can be fixed by mutating in a new column that stores the `Row.names` column as date type. Then, the `select()` function is used to keep all columns except the now redundant `Row.names` character column.
 
 ```{r chr-2-date}
 
+#| echo: true
+#| message: false
+#| warning: false
+
+
+df_full <- df_full |>
+  mutate(date=as.Date(Row.names)) |>
+  select(date, everything(), -Row.names)
+
+tail(df_full,10)
+```
+
+## Visualization
+
+Now that a single data frame holds the data for all five tickers and has a correctly set `date` column, the figure generation can begin.
+
+```{r viz-AXTI}
+
+#| echo: true
+#| message: false
+#| warning: false
+
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=axti_adjusted, color = "Adjusted")) +
+  geom_line(aes(y=axti_sma_6, color = "SMA 6")) +
+  geom_line(aes(y=axti_ytd_avg, color = "YTD")) +
+  labs(title = "AXTI 2026 Year-to-date Performance ", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Stock Price (USD)") +
+  theme_minimal()
+
+```
+
+```{r viz-BE}
+
+#| echo: true
+#| message: false
+#| warning: false
+
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=be_adjusted, color = "Adjusted")) +
+  geom_line(aes(y=be_sma_6, color = "SMA 6")) +
+  geom_line(aes(y=be_ytd_avg, color = "YTD")) +
+  labs(title = "BE 2026 Year-to-date Performance ", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Stock Price (USD)") +
+  theme_minimal()
+
+```
+
+```{r viz-COHR}
+
+#| echo: true
+#| message: false
+#| warning: false
+
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=cohr_adjusted, color = "Adjusted")) +
+  geom_line(aes(y=cohr_sma_6, color = "SMA 6")) +
+  geom_line(aes(y=cohr_ytd_avg, color = "YTD")) +
+  labs(title = "COHR 2026 Year-to-date Performance ", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Stock Price (USD)") +
+  theme_minimal()
 
 
 ```
 
-## Visualization
+```{r viz-DELL}
+
+#| echo: true
+#| message: false
+#| warning: false
+
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=dell_adjusted, color = "Adjusted")) +
+  geom_line(aes(y=dell_sma_6, color = "SMA 6")) +
+  geom_line(aes(y=dell_ytd_avg, color = "YTD")) +
+  labs(title = "DELL 2026 Year-to-date Performance ", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Stock Price (USD)") +
+  theme_minimal()
+
+```
+
+```{r viz-NVDA}
+
+#| echo: true
+#| message: false
+#| warning: false
+
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=nvda_adjusted, color = "Adjusted")) +
+  geom_line(aes(y=nvda_sma_6, color = "SMA 6")) +
+  geom_line(aes(y=nvda_ytd_avg, color = "YTD")) +
+  labs(title = "NVDA 2026 Year-to-date Performance ", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Stock Price (USD)") +
+  theme_minimal()
+
+
+```
+
+```{r viz-all-sma-6}
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=axti_sma_6, color = "AXTI")) +
+  geom_line(aes(y=be_sma_6, color = "BE")) +
+  geom_line(aes(y=cohr_sma_6, color = "COHR")) +
+  geom_line(aes(y=dell_sma_6, color = "DELL")) +
+  geom_line(aes(y=nvda_sma_6, color = "NVDA")) +
+  labs(title = "2026 Year-to-date Performance as 6-day Simple Moving Averages", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="6-Day Simple Moving Average Price (USD)") +
+  theme_minimal()
+```
+
+```{r viz-all-ytd}
+df_full |> ggplot(aes(x=date)) +
+  geom_line(aes(y=axti_ytd_avg, color = "AXTI")) +
+  geom_line(aes(y=be_ytd_avg, color = "BE")) +
+  geom_line(aes(y=cohr_ytd_avg, color = "COHR")) +
+  geom_line(aes(y=dell_ytd_avg, color = "DELL")) +
+  geom_line(aes(y=nvda_ytd_avg, color = "NVDA")) +
+  labs(title = "2026 Year-to-date Performance as Cumulative Averages", subtitle = "data sourced from yfinance via quantmod package (access: 2026/09/16)", x= "Date", y="Cumulative Year-to-Date Average Price (USD)") +
+  theme_minimal()
+
+```
+
+# Findings and Recommendations
