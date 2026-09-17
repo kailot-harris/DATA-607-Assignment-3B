@@ -22,6 +22,9 @@ Anticipated challenges in this assignment include maintaining a reproducible pip
 Alpha Vantage was selected as the data provider for this assignment, as it has a generous free tier and the documentation is available (<https://www.alphavantage.co/documentation/>). An API key was provisioned and stored in .Renviron for secure credential storage. The "TIME_SERIES_DAILY" API was chosen for this endeavor as it provides date, daily open, daily high, daily low, daily close, and daily volume values (OHLCV). Since this API returns data for one ticker symbol per request, only 5 tickers will be investigated for this report. This will allow for retries on these five tickers without tripping the daily query limit at the API. A small ticker universe was selected for this reasons, and it includes: \$DELL, \$AXTI, \$BE, \$COHR, and \$NVDA. Accessing the API can be accomplished through the `alphavantager` package, available at <https://cran.r-project.org/web/packages/alphavantager/refman/alphavantager.html>. This API interface has a 1 request per second limit, so it is important to manually run each line below after a 1 second pause.
 
 ```{r API-connect}
+#| echo: false
+#| message: false
+#| warning: false
 
 library(alphavantager)
 
@@ -58,6 +61,9 @@ head(df_AXTI)
 Issue: data starts on April 24th, but a year-to-date rolling average is needed. Approach: Query API for specific date range: 2026-01-01 - 2026-04-23. API does not allow historic querying on free tier. Going to try Massive API to get missing dates. Massive didn't work (too many requests needed for API limit). Going to try quantmod next (<https://www.quantmod.com/documentation/>).
 
 ```{r more-API-data}
+#| echo: true
+#| message: false
+#| warning: false
 
 library(quantmod)
 
@@ -69,7 +75,7 @@ getSymbols(ticker_univ, src = "yahoo", from = start_date, to = end_date)
 head(AXTI)
 ```
 
-For each data frame, the names are cleaned (removing periods), the object is converted a tidyverse ready data frame, and only the adjusted close price column is maintained.
+For each data frame, the names are cleaned (removing periods), the object is converted to a tidyverse ready data frame, and only the adjusted close price column is maintained.
 
 ```{r data-tidying-2}
 
@@ -100,29 +106,61 @@ df_NVDA <- NVDA |>
   select(nvda_adjusted)
 ```
 
+Slider functions from the `dplyr` package (loaded with `tinyverse`) are leveraged to calculate a 6-day simple moving average. Additionally, a year-to-date average is calculated for each row in each data frame.
+
 ```{r window-functions}
+
+#| echo: true
+#| message: false
+#| warning: false
+
 library(slider)
 
+df_AXTI <- df_AXTI |> 
+  mutate(axti_sma_6 = slide_dbl(axti_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         axti_ytd_avg = cummean(axti_adjusted))
 
-df_AXTI |> 
-  mutate(sma_6 = slide_dbl(axti_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
-         ytd_avg = cummean(axti_adjusted))
+df_BE <- df_BE |> 
+  mutate(be_sma_6 = slide_dbl(be_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         be_ytd_avg = cummean(be_adjusted))
 
-df_BE |> 
-  mutate(sma_6 = slide_dbl(be_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
-         ytd_avg = cummean(be_adjusted))
+df_COHR <- df_COHR |> 
+  mutate(cohr_sma_6 = slide_dbl(cohr_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         cohr_ytd_avg = cummean(cohr_adjusted))
 
-df_COHR |> 
-  mutate(sma_6 = slide_dbl(cohr_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
-         ytd_avg = cummean(cohr_adjusted))
+df_DELL <- df_DELL |> 
+  mutate(dell_sma_6 = slide_dbl(dell_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         dell_ytd_avg = cummean(dell_adjusted))
 
-df_DELL |> 
-  mutate(sma_6 = slide_dbl(dell_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
-         ytd_avg = cummean(dell_adjusted))
+df_NVDA <- df_NVDA |>
+  mutate(nvda_sma_6 = slide_dbl(nvda_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
+         nvda_ytd_avg = cummean(nvda_adjusted))
+```
 
-df_NVDA |>
-  mutate(sma_6 = slide_dbl(nvda_adjusted, mean, .before = 5, .after = 0, .complete = FALSE),
-         ytd_avg = cummean(nvda_adjusted))
+## Data Frame Joining
+
+```{r df-joining}
+#| echo: true
+#| message: false
+#| warning: false
+
+#first, null out the df_full data frame
+df_full <- df[0,]
+
+df_full <- merge(df_AXTI, df_BE, by = 0)
+df_full <- merge(df_full, df_COHR, by.x="Row.names", by.y=0)
+df_full <- merge(df_full, df_DELL, by.x="Row.names", by.y=0)
+df_full <- merge(df_full, df_NVDA, by.x="Row.names", by.y=0)
+
+head(df_full,10)
+```
+
+The date column is now a character vector, rather than a date vector.
+
+```{r chr-2-date}
+
+
+
 ```
 
 ## Visualization
