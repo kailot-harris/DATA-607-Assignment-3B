@@ -31,15 +31,15 @@ library(alphavantager)
 ticker_univ = c("DELL", "AXTI", "BE", "COHR", "NVDA")
 av_api_key(Sys.getenv("DATA_607_ALPHA_KEY"))
 
-df_DELL <- av_get(ticker_univ[1], av_fun = "TIME_SERIES_DAILY")
+#df_DELL <- av_get(ticker_univ[1], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
-df_AXTI <- av_get(ticker_univ[2], av_fun = "TIME_SERIES_DAILY")
+#df_AXTI <- av_get(ticker_univ[2], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
-df_BE <- av_get(ticker_univ[3], av_fun = "TIME_SERIES_DAILY")
+#df_BE <- av_get(ticker_univ[3], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
-df_COHR <- av_get(ticker_univ[4], av_fun = "TIME_SERIES_DAILY")
+#df_COHR <- av_get(ticker_univ[4], av_fun = "TIME_SERIES_DAILY")
 # PAUSE FOR 1 SECOND BEFORE NEXT LINE OR API RATE LIMIT WILL GET TRIPPED
-df_NVDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
+#df_NVDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
 ```
 
 ## Data Tidying
@@ -53,13 +53,13 @@ df_NVDA <- av_get(ticker_univ[5], av_fun = "TIME_SERIES_DAILY")
 library(janitor)
 library(tidyverse)
 
-df_AXTI <- janitor::clean_names(df_AXTI)
-df_BE <- janitor::clean_names(df_BE)
-df_COHR <- janitor::clean_names(df_COHR)
-df_DELL <- janitor::clean_names(df_DELL)
-df_NVDA <- janitor::clean_names(df_NVDA)
+#df_AXTI <- janitor::clean_names(df_AXTI)
+#df_BE <- janitor::clean_names(df_BE)
+#df_COHR <- janitor::clean_names(df_COHR)
+#df_DELL <- janitor::clean_names(df_DELL)
+#df_NVDA <- janitor::clean_names(df_NVDA)
 
-head(df_AXTI)
+#head(df_AXTI)
 ```
 
 ## Retrying a New Data Source
