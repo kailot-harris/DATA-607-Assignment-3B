@@ -130,7 +130,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="data-tidying" class="level2">
 <h2 class="anchored" data-anchor-id="data-tidying">Data Tidying</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#| warning: false</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
@@ -171,6 +171,8 @@ Attaching package: 'janitor'</code></pre>
 ✖ dplyr::lag()    masks stats::lag()
 ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 </div>
+</div>
+<div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#df_AXTI &lt;- janitor::clean_names(df_AXTI)</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co">#df_BE &lt;- janitor::clean_names(df_BE)</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">#df_COHR &lt;- janitor::clean_names(df_COHR)</span></span>
@@ -502,6 +504,14 @@ Attaching package: 'janitor'</code></pre>
 </section>
 <section id="findings-and-recommendations" class="level1">
 <h1>Findings and Recommendations</h1>
+<p>The main objective of this assignment was accomplished: window functions were utilized to calculate rolling averages in the form of 6-day simple-moving-averages and year-to-date cumulative averages. These calculations were performed on 2026 stock data for five unique ticker symbols. Data was sourced from yfinance (a yahoo service) via the <code>quantmod</code> R package.</p>
+<p>Initial attempts to ingest stock price data from two separate APIs failed due to API rate limits and free-tier exclusions. One of these attempts is documented in commented-out code above. Successful data access was accomplished via the aforementioned <code>quantmod</code> R package, which remedied the data ingestion issue. In quantitative finance, year-to-date averages are rarely used, however a 200-day simple-moving-average is a common stand-in.</p>
+<p>There are five key recommendations for how to extend this work and refine it:</p>
+<p>1) The simple moving average is currently calculated with a fixed window length. One improvement would be to parameterize this hard-coded value, so that a user can easily map a 10-day SMA if that measure proved useful.</p>
+<p>2) As previously mentioned, the exponential moving average (EMA) is also a popular technical indicator in quantitative finance. Manual calculation of this metric would not be necessary, as the <code>TTR</code> package is loaded with <code>quantmod</code> and can perform this calculation with a single command.</p>
+<p>3) Data frames were joined to maintain the date column as the row index. An alternative approach could have been to use <code>bind_rows()</code> or <code>pivot_longer()</code> to create a long tidy data frame. In this approach, a new column for ticker name would need to be created, but the variable column names could have remained ‘adjusted’, ‘sma_6’, and ‘ytd_avg’.</p>
+<p>4) While not necessary for this assignment, exploring how to perform these same calculations in SQL would be informative and productive for skill-building.</p>
+<p>5) While the closing adjusted stock price in USD was used throughout, an improvement could be to standardize this data so that starting values (e.g.&nbsp;2026/01/02) were unity (1), and then drawdowns show as values within [0,1) and profit shows as values within (1, inf). This would allow for quicker visual comparison between the performance of the various tickers. For instance, it is difficult to discern the relative performance of BE and COHR: both show positive year-to-date average trends, yet each has a different starting value. Normalizing these values would help with comparison.</p>
 </section>
 
 </main>

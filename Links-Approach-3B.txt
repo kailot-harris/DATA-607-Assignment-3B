@@ -1,0 +1,5 @@
+# Approach
+https://github.com/kailot-harris/DATA-607-Assignment-3B/blob/main/Assignment3B-KCH-Approach.html
+https://github.com/kailot-harris/DATA-607-Assignment-3B/blob/main/Assignment3B-KCH-Approach.qmd
+
+# Codebase

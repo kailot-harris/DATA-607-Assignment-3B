@@ -46,12 +46,19 @@ av_api_key(Sys.getenv("DATA_607_ALPHA_KEY"))
 
 ```{r data-tidying}
 
-#| echo: true
+#| echo: false
 #| message: false
 #| warning: false
 
 library(janitor)
 library(tidyverse)
+```
+
+```{r does-not-run}
+#| echo: true
+#| message: false
+#| warning: false
+
 
 #df_AXTI <- janitor::clean_names(df_AXTI)
 #df_BE <- janitor::clean_names(df_BE)
@@ -290,3 +297,19 @@ df_full |> ggplot(aes(x=date)) +
 ```
 
 # Findings and Recommendations
+
+The main objective of this assignment was accomplished: window functions were utilized to calculate rolling averages in the form of 6-day simple-moving-averages and year-to-date cumulative averages. These calculations were performed on 2026 stock data for five unique ticker symbols. Data was sourced from yfinance (a yahoo service) via the `quantmod` R package.
+
+Initial attempts to ingest stock price data from two separate APIs failed due to API rate limits and free-tier exclusions. One of these attempts is documented in commented-out code above. Successful data access was accomplished via the aforementioned `quantmod` R package, which remedied the data ingestion issue. In quantitative finance, year-to-date averages are rarely used, however a 200-day simple-moving-average is a common stand-in.
+
+There are five key recommendations for how to extend this work and refine it:
+
+1\) The simple moving average is currently calculated with a fixed window length. One improvement would be to parameterize this hard-coded value, so that a user can easily map a 10-day SMA if that measure proved useful.
+
+2\) As previously mentioned, the exponential moving average (EMA) is also a popular technical indicator in quantitative finance. Manual calculation of this metric would not be necessary, as the `TTR` package is loaded with `quantmod` and can perform this calculation with a single command.
+
+3\) Data frames were joined to maintain the date column as the row index. An alternative approach could have been to use `bind_rows()` or `pivot_longer()` to create a long tidy data frame. In this approach, a new column for ticker name would need to be created, but the variable column names could have remained 'adjusted', 'sma_6', and 'ytd_avg'.
+
+4\) While not necessary for this assignment, exploring how to perform these same calculations in SQL would be informative and productive for skill-building.
+
+5\) While the closing adjusted stock price in USD was used throughout, an improvement could be to standardize this data so that starting values (e.g. 2026/01/02) were unity (1), and then drawdowns show as values within \[0,1) and profit shows as values within (1, inf). This would allow for quicker visual comparison between the performance of the various tickers. For instance, it is difficult to discern the relative performance of BE and COHR: both show positive year-to-date average trends, yet each has a different starting value. Normalizing these values would help with comparison.
